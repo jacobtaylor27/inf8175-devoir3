@@ -45,15 +45,15 @@ class PerceptronModel(object):
         """
         Train the perceptron until convergence.
         """
-        converged = False  # Variable to track convergence
+        converged = False
 
         while not converged:
-            converged = True  # Reset convergence flag for the new epoch
+            converged = True 
 
             # Iterate over each data point in the dataset
             for x, y in dataset.iterate_once(batch_size=1):
-                prediction = self.get_prediction(x)  # Get perceptron's prediction
-                target = nn.as_scalar(y)  # Get the target label
+                prediction = self.get_prediction(x)
+                target = nn.as_scalar(y)
 
                 # Update weights if prediction is incorrect
                 if prediction != target:
@@ -61,9 +61,8 @@ class PerceptronModel(object):
                     update_direction = x.data if target == 1 else -x.data
                     # Update the weights
                     self.w.update(nn.Constant(update_direction), 1.0)
-                    converged = False  # Update convergence flag
+                    converged = False 
 
-            # Check if convergence is achieved
             if converged:
                 break
 
