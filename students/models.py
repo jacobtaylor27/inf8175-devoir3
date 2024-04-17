@@ -1,4 +1,5 @@
 import nn
+import numpy as np
 from backend import PerceptronDataset, RegressionDataset, DigitClassificationDataset
 
 
@@ -28,7 +29,6 @@ class PerceptronModel(object):
             x: a node with shape (1 x dimensions)
         Returns: a node containing a single number (the score)
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 1 ***"
         return nn.DotProduct(self.w, x)
                 
 
@@ -38,7 +38,6 @@ class PerceptronModel(object):
 
         Returns: 1 or -1
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 1 ***"
         return 1 if nn.as_scalar(self.run(x)) >= 0 else -1
         
 
@@ -46,7 +45,6 @@ class PerceptronModel(object):
         """
         Train the perceptron until convergence.
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 1 ***"
         converged = False  # Variable to track convergence
 
         while not converged:
@@ -78,13 +76,12 @@ class RegressionModel(object):
     """
 
     def __init__(self) -> None:
-        # Initialize your model parameters here
-        "*** TODO: COMPLETE HERE FOR QUESTION 2 ***"
-        self.w1 = nn.Parameter(1, 100)
-        self.b1 = nn.Parameter(1, 100)
+        # Initialize model parameters
+        self.w1 = nn.Parameter(1, 100) 
+        self.b1 = nn.Parameter(1, 100) 
         self.w2 = nn.Parameter(100, 100)
-        self.b2 = nn.Parameter(1, 100)
-        self.w3 = nn.Parameter(100, 1)
+        self.b2 = nn.Parameter(1, 100) 
+        self.w3 = nn.Parameter(100, 1) 
         self.b3 = nn.Parameter(1, 1)
 
     def run(self, x: nn.Constant) -> nn.Node:
@@ -96,9 +93,8 @@ class RegressionModel(object):
         Returns:
             A node with shape (batch_size x 1) containing predicted y-values
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 2 ***"
-        l1 = nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
-        l2 = nn.ReLU(nn.AddBias(nn.Linear(l1, self.w2), self.b2))
+        l1 = nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1)) 
+        l2 = nn.ReLU(nn.AddBias(nn.Linear(l1, self.w2), self.b2)) 
         return nn.AddBias(nn.Linear(l2, self.w3), self.b3)
 
     def get_loss(self, x: nn.Constant, y: nn.Constant) -> nn.Node:
@@ -111,29 +107,28 @@ class RegressionModel(object):
                 to be used for training
         Returns: a loss node
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 2 ***"
         return nn.SquareLoss(self.run(x), y)
 
     def train(self, dataset: RegressionDataset) -> None:
         """
         Trains the model.
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 2 ***"
-        epochs = 250
-        learning_rate = 0.01
+        epochs = 100
+        learning_rate = 0.1
+        loss_threshold = 0.02
+
+        parameters = [self.w1, self.b1, self.w2, self.b2]
 
         for _ in range(epochs):
-            loss = 0.0
+            if nn.as_scalar(self.get_loss(nn.Constant(dataset.x), nn.Constant(dataset.y))) < loss_threshold:
+                break
+
             for x, y in dataset.iterate_once(batch_size=1):
                 curr_loss = self.get_loss(x, y)
-                loss += nn.as_scalar(curr_loss)
-
                 grads = nn.gradients(curr_loss, [self.w1, self.b1, self.w2, self.b2])
 
-                self.w1.update(grads[0], -learning_rate)
-                self.b1.update(grads[1], -learning_rate)
-                self.w2.update(grads[2], -learning_rate)
-                self.b2.update(grads[3], -learning_rate)
+                for param in parameters:
+                    param.update(grads[parameters.index(param)], -learning_rate)
 
 
 class DigitClassificationModel(object):
@@ -152,9 +147,14 @@ class DigitClassificationModel(object):
     """
 
     def __init__(self) -> None:
-        # Initialize your model parameters here
-        "*** TODO: COMPLETE HERE FOR QUESTION 3 ***"
-
+        # Initialize model parameters
+        self.w1 = nn.Parameter(784, 100)
+        self.b1 = nn.Parameter(1, 100)
+        self.w2 = nn.Parameter(100, 100)
+        self.b2 = nn.Parameter(1, 100)
+        self.w3 = nn.Parameter(100, 10)
+        self.b3 = nn.Parameter(1, 10)
+        
     def run(self, x: nn.Constant) -> nn.Node:
         """
         Runs the model for a batch of examples.
@@ -169,7 +169,10 @@ class DigitClassificationModel(object):
             A node with shape (batch_size x 10) containing predicted scores
                 (also called logits)
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 3 ***"
+        l1 = nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
+        l2 = nn.ReLU(nn.AddBias(nn.Linear(l1, self.w2), self.b2))
+        return nn.AddBias(nn.Linear(l2, self.w3), self.b3)
+    
 
     def get_loss(self, x: nn.Constant, y: nn.Constant) -> nn.Node:
         """
@@ -184,10 +187,28 @@ class DigitClassificationModel(object):
             y: a node with shape (batch_size x 10)
         Returns: a loss node
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 3 ***"
+        return nn.SoftmaxLoss(self.run(x), y)
+    
 
     def train(self, dataset: DigitClassificationDataset) -> None:
         """
         Trains the model.
         """
-        "*** TODO: COMPLETE HERE FOR QUESTION 3 ***"
+        epochs = 250
+        learning_rate = 0.5
+        accuracy_threshold = 0.975
+
+        parameters = [self.w1, self.b1, self.w2, self.b2, self.w3, self.b3]
+
+        for _ in range(epochs):
+            for x, y in dataset.iterate_once(batch_size=1500):
+                current_accuracy = dataset.get_validation_accuracy()
+                
+                if current_accuracy > accuracy_threshold:
+                    break
+
+                curr_loss = self.get_loss(x, y)
+                grads = nn.gradients(curr_loss, [self.w1, self.b1, self.w2, self.b2, self.w3, self.b3])
+               
+                for param in parameters:
+                    param.update(grads[parameters.index(param)], -learning_rate)
