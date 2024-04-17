@@ -80,6 +80,12 @@ class RegressionModel(object):
     def __init__(self) -> None:
         # Initialize your model parameters here
         "*** TODO: COMPLETE HERE FOR QUESTION 2 ***"
+        self.w1 = nn.Parameter(1, 100)
+        self.b1 = nn.Parameter(1, 100)
+        self.w2 = nn.Parameter(100, 100)
+        self.b2 = nn.Parameter(1, 100)
+        self.w3 = nn.Parameter(100, 1)
+        self.b3 = nn.Parameter(1, 1)
 
     def run(self, x: nn.Constant) -> nn.Node:
         """
@@ -91,6 +97,9 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** TODO: COMPLETE HERE FOR QUESTION 2 ***"
+        l1 = nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
+        l2 = nn.ReLU(nn.AddBias(nn.Linear(l1, self.w2), self.b2))
+        return nn.AddBias(nn.Linear(l2, self.w3), self.b3)
 
     def get_loss(self, x: nn.Constant, y: nn.Constant) -> nn.Node:
         """
@@ -103,12 +112,28 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** TODO: COMPLETE HERE FOR QUESTION 2 ***"
+        return nn.SquareLoss(self.run(x), y)
 
     def train(self, dataset: RegressionDataset) -> None:
         """
         Trains the model.
         """
         "*** TODO: COMPLETE HERE FOR QUESTION 2 ***"
+        epochs = 250
+        learning_rate = 0.01
+
+        for _ in range(epochs):
+            loss = 0.0
+            for x, y in dataset.iterate_once(batch_size=1):
+                curr_loss = self.get_loss(x, y)
+                loss += nn.as_scalar(curr_loss)
+
+                grads = nn.gradients(curr_loss, [self.w1, self.b1, self.w2, self.b2])
+
+                self.w1.update(grads[0], -learning_rate)
+                self.b1.update(grads[1], -learning_rate)
+                self.w2.update(grads[2], -learning_rate)
+                self.b2.update(grads[3], -learning_rate)
 
 
 class DigitClassificationModel(object):
