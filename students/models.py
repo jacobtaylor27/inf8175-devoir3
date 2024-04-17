@@ -29,6 +29,8 @@ class PerceptronModel(object):
         Returns: a node containing a single number (the score)
         """
         "*** TODO: COMPLETE HERE FOR QUESTION 1 ***"
+        return nn.DotProduct(self.w, x)
+                
 
     def get_prediction(self, x: nn.Constant) -> int:
         """
@@ -37,12 +39,35 @@ class PerceptronModel(object):
         Returns: 1 or -1
         """
         "*** TODO: COMPLETE HERE FOR QUESTION 1 ***"
+        return 1 if nn.as_scalar(self.run(x)) >= 0 else -1
+        
 
     def train(self, dataset: PerceptronDataset) -> None:
         """
         Train the perceptron until convergence.
         """
         "*** TODO: COMPLETE HERE FOR QUESTION 1 ***"
+        converged = False  # Variable to track convergence
+
+        while not converged:
+            converged = True  # Reset convergence flag for the new epoch
+
+            # Iterate over each data point in the dataset
+            for x, y in dataset.iterate_once(batch_size=1):
+                prediction = self.get_prediction(x)  # Get perceptron's prediction
+                target = nn.as_scalar(y)  # Get the target label
+
+                # Update weights if prediction is incorrect
+                if prediction != target:
+                    # Calculate the update direction based on the target label
+                    update_direction = x.data if target == 1 else -x.data
+                    # Update the weights
+                    self.w.update(nn.Constant(update_direction), 1.0)
+                    converged = False  # Update convergence flag
+
+            # Check if convergence is achieved
+            if converged:
+                break
 
 
 class RegressionModel(object):
