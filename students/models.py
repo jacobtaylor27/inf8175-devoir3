@@ -80,8 +80,8 @@ class RegressionModel(object):
         self.w1 = nn.Parameter(1, 100) 
         self.b1 = nn.Parameter(1, 100) 
         self.w2 = nn.Parameter(100, 100)
-        self.b2 = nn.Parameter(1, 100) 
-        self.w3 = nn.Parameter(100, 1) 
+        self.b2 = nn.Parameter(1, 100)
+        self.w3 = nn.Parameter(100, 1)
         self.b3 = nn.Parameter(1, 1)
 
     def run(self, x: nn.Constant) -> nn.Node:
